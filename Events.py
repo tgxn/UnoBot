@@ -19,6 +19,7 @@ class ConnectedEvent(Events.ConnectedEvent):
 		# Joins the configured channel on connect.
 		bot.sendJoin(Config.channel)
 		
+		# Announce running.
 		bot.sendAction(Config.channel, "is now running!")
 		
 
