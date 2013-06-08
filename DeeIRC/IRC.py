@@ -24,7 +24,7 @@
 #		channel
 #	part
 #		nick
-#		channel		
+#		channel
 #	kick
 #		nick
 #		kick_nick
@@ -66,7 +66,7 @@ import datetime
 class DeeIRC(object):
 	"""Manages connecting to IRC and handles events."""
 	
-	def __init__(self, nick="UnoBot", user="UnoBot", name="Uno Game Robot"):
+	def __init__(self, nick, user, name):
 		"""Constructor."""
 				
 		self.__sock = None
@@ -118,7 +118,7 @@ class DeeIRC(object):
 		# Run the main loop in a thread, because that is cool.
 		self.__main_thread = threading.Thread(target=self.mainLoop)
 	
-	def connect(self, server, port=6667):
+	def connect(self, server, port):
 		"""Connects to the IRC server and sets up a socket."""
 		self.log("Attempting to connect to server.")
 		
@@ -131,7 +131,7 @@ class DeeIRC(object):
 		# Start the thread.
 		self.__main_thread.start()
 	
-	def disconnect(self, message="UnoBot Framework"):
+	def disconnect(self, message="Client Exited"):
 		"""Disconnects from the server."""
 		if self.connected:		
 			self.sendRaw("QUIT :" + message)
@@ -253,14 +253,14 @@ class DeeIRC(object):
 			self.sendRaw("PART " + channel)
 	
 	def sendAction(self, target, message):
-		"""Sends a notice to a target."""
-		self.sendRaw("DESCRIBE " + target + " :" + message)
+		"""Sends a action to a target."""
+		self.sendRaw("PRIVMSG " + target + " :\001ACTION " + message + "\001")
 		
-	def sendAddModes(self, channel, target, modes)
-		self.sendRaw("MODE " + channel + " +" + modes + " :" + target)
+	def sendAddMode(self, channel, target, mode):
+		self.sendRaw("MODE " + channel + " +" + mode + " :" + target)
 	
-	def sendRemModes(self, channel, target, modes)
-		self.sendRaw("MODE " + channel + " -" + modes + " :" + target)
+	def sendRemMode(self, channel, target, mode):
+		self.sendRaw("MODE " + channel + " -" + mode + " :" + target)
 	
 	def sendMessage(self, target, message):
 		"""Sends a message to the specificed target."""
@@ -276,7 +276,7 @@ class DeeIRC(object):
 	
 	def sendRaw(self, data):
 		"""Sends raw data to the socket. Automatically adds a new
-		line feed and such at the end."""		
+		line feed and such at the end."""
 		self.__sock.send(data + "\r\n")
 	
 	# ------ Event management helpers.
