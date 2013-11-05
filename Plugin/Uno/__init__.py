@@ -58,6 +58,7 @@ class UnoPlugin(Plugin.Plugin):
 		
 		# Draw card draws a card to the players deck.
 		self.addCommand("draw", self.commandDraw)
+		self.addCommand("d", self.commandDraw)
 		
 		# Pass turn.
 		self.addCommand("pass", self.commandPass)
@@ -68,6 +69,9 @@ class UnoPlugin(Plugin.Plugin):
 		
 		# Display top card.
 		self.addCommand("top", self.commandTop)
+		
+		# Display current turn
+		self.addCommand("turn", self.commandTurn)
 		
 		# Admin Commands
 		self.addCommand("admin", self.commandAdmin)
@@ -117,8 +121,8 @@ class UnoPlugin(Plugin.Plugin):
 			self.state = UNO_STATE_STARTING
 			
 			# Print some messages.
-			bot.sendMessage(target, "A game of Uno has started. Players should now !join.")
-			bot.sendNotice(nick, "Use !deal to start your game.")
+			bot.sendMessage(target, "A game of Uno has started. Players can now \"join\".")
+			bot.sendNotice(nick, "You need to use \"deal\" when you are ready to start your game.")
 			
 			# Set the game's owner.
 			self.gameowner = nick
@@ -127,10 +131,13 @@ class UnoPlugin(Plugin.Plugin):
 			self.players = []
 			self.addPlayer(bot, nick)
 			
+			# Give HOP to owner
+			self.givePlayerHop(bot, nick)
+			
 		# Already a game in progress.
 		elif self.state == UNO_STATE_STARTING or self.state == UNO_STATE_STARTED:
 			if not self.isPlayerInGame(nick):
-				bot.sendNotice(nick, "Please use !join to join the current game.")
+				self.commandJoin(bot, nick, target, message)
 			else:
 				bot.sendNotice(nick, "You are already in the current game.")
 	
@@ -150,10 +157,13 @@ class UnoPlugin(Plugin.Plugin):
 				# Add then to the game.
 				self.addPlayer(bot, nick)
 				
+				# Give voice to players
+				self.givePlayerVoice(bot, nick)
+				
 			else:
 				bot.sendNotice(nick, "You are already in the game.")
 		else:
-			bot.sendNotice(nick, "There is no current game, you can create one using !uno.")
+			bot.sendNotice(nick, "There is no current game, you can create one using \"uno\".")
 	
 	# commandDeal() - Starts the game by dealing cards.
 		# - Checks game is in lobby state.
@@ -161,17 +171,24 @@ class UnoPlugin(Plugin.Plugin):
 	
 	def commandDeal(self, bot, nick, target, message):
 		
-		# Check if game in lobby
-		if self.state == UNO_STATE_STARTING:
+		# Check this is the owner or is an admin.
+		if self.gameowner == nick or bot.isAdmin(nick):
 			
-			# Deal the cards.
-			self.unoStartGame(bot)
+			# Check if game in lobby
+			if self.state == UNO_STATE_STARTING:
+				
+				# Deal the cards.
+				self.unoStartGame(bot)
+				
+			# In progress or not started.
+			elif self.state == UNO_STATE_STOPPED or self.state == UNO_STATE_STARTED:
+				
+				# Cant deal now.
+				bot.sendNotice(nick, "You can't do that now.")
 			
-		# In progress or not started.
-		elif self.state == UNO_STATE_STOPPED or self.state == UNO_STATE_STARTED:
-			
-			# Cant deal now.
-			bot.sendNotice(nick, "You can't do that now.")
+		else:
+			bot.sendNotice(nick, "You need to be the owner of the game to start it.")
+	
 	
 	# commandPlay() - Allows a player to play a card.
 		# - Confirm a game is in progress.
@@ -194,6 +211,12 @@ class UnoPlugin(Plugin.Plugin):
 			
 			# Confirm a card is played.
 			if message:
+				
+				# make it lower case.
+				message = message.lower()
+				
+				# strip whitespace
+				message = message.strip()
 				
 				# Get the current player
 				player_index = self.turn_index
@@ -259,63 +282,66 @@ class UnoPlugin(Plugin.Plugin):
 									# We did indeed play a turn.
 									turn_played = True
 								else:
-									bot.sendNotice(nick, "Please specify a colour."+color)
+									bot.sendNotice(nick, "Please specify a colour.")
 							else:
 								bot.sendNotice(nick, "You don't have that card!")
 						
-						
-						elif message[0] == self.last_card[0] or message[1] == self.last_card[1] or self.last_card == "w" or self.last_card == "wd4":
-							
-							# Make sure the palyer actually has that card.
-							if message in player["hand"]:
+						elif len(message) >= 2:
+							if message[0] == self.last_card[0] or message[1] == self.last_card[1] or self.last_card == "w" or self.last_card == "wd4":
 								
-								# Reverse Card
-								if message[1] == "r":
+								# Make sure the player actually has that card.
+								if message in player["hand"]:
 									
-									# Reverse play
-									self.reverse = not self.reverse
-									
-								# Skip Card
-								elif message[1] == "s":
-								
-									# Skip. Get the next player.
-									next_player = self.players[self.getNextPlayerIndex()]
-									
-									# Print out a message.
-									bot.sendMessage(target, next_player["nick"] + " skips their turn.")	
+									# Reverse Card
+									if message[1] == "r":
 										
-									# Skip their turn.
-									self.skipTurn()
-									
-								# Draw Two Card
-								elif message[1:3] == "d2":
-									
-									# Draw two.	Get the next player.
-									next_player_index = self.getNextPlayerIndex()
-									next_player = self.players[next_player_index]
-									
-									# Move the cards from the deck to the player's hands.
-									self.drawCards(next_player_index, 2)
-									
-									# Print a message and send the player their hand.
-									bot.sendMessage(target, next_player["nick"] + " draws two cards.")
-									self.sendPlayerHand(bot, next_player_index)
+										# Reverse play
+										self.reverse = not self.reverse
 										
-									# Skip the turn.
-									self.skipTurn()
+									# Skip Card
+									elif message[1] == "s":
 									
-								# Remove the card from the player's hand.
-								self.removeCardFromHand(player_index, message)
-								
-								# Set top card
-								self.last_card = message
-								
-								# Yep.
-								turn_played = True
+										# Skip. Get the next player.
+										next_player = self.players[self.getNextPlayerIndex()]
+										
+										# Print out a message.
+										bot.sendMessage(target, next_player["nick"] + " skips their turn.")	
+											
+										# Skip their turn.
+										self.skipTurn()
+										
+									# Draw Two Card
+									elif message[1:3] == "d2":
+										
+										# Draw two.	Get the next player.
+										next_player_index = self.getNextPlayerIndex()
+										next_player = self.players[next_player_index]
+										
+										# Move the cards from the deck to the player's hands.
+										self.drawCards(next_player_index, 2)
+										
+										# Print a message and send the player their hand.
+										bot.sendMessage(target, next_player["nick"] + " draws two cards.")
+										self.sendPlayerHand(bot, next_player_index)
+											
+										# Skip the turn.
+										self.skipTurn()
+										
+									# Remove the card from the player's hand.
+									self.removeCardFromHand(player_index, message)
+									
+									# Set top card
+									self.last_card = message
+									
+									# Yep.
+									turn_played = True
+								else:
+									bot.sendNotice(nick, "You don't have that card!")
 							else:
-								bot.sendNotice(nick, "You don't have that card!")
+								bot.sendNotice(nick, "You can't play that card!")
+						
 						else:
-							bot.sendNotice(nick, "You can't play that card!")
+								bot.sendNotice(nick, "Please specify a proper colour.")
 						
 						# Send a message to the channel and send the player's hand.
 						if turn_played:
@@ -335,7 +361,7 @@ class UnoPlugin(Plugin.Plugin):
 								bot.sendMessage(self.channel, "\o\ " + nick + "\o\ ")
 								
 								# Reset the uno game.
-								self.resetUno()
+								self.resetUno(bot)
 								
 							else:
 								
@@ -382,7 +408,7 @@ class UnoPlugin(Plugin.Plugin):
 					self.moveCards(self.deck, player["hand"], 1)
 					
 					# Send a message to the channel and send the player's hand.
-					bot.sendMessage(target, player["nick"] + " drew a card. They now has "+str(len(player["hand"]))+" cards.")
+					bot.sendMessage(target, player["nick"] + " drew a card. They now have "+str(len(player["hand"]))+" cards.")
 					
 					# Send players hand.
 					self.sendPlayerHand(bot, player_index)
@@ -391,7 +417,7 @@ class UnoPlugin(Plugin.Plugin):
 					self.canpass = True
 			
 			else:
-				bot.sendNotice(nick, "You cannot draw another card, you must either play or !pass.")
+				bot.sendNotice(nick, "You cannot draw another card, you must either play or \"pass\".")
 		else:
 			bot.sendNotice(nick, "There is no game in progress.")
 	
@@ -427,7 +453,7 @@ class UnoPlugin(Plugin.Plugin):
 					self.doTurn(bot)
 					
 			else:
-				bot.sendNotice(nick, "You need to !draw a card first.")
+				bot.sendNotice(nick, "You need to \"draw\" a card first.")
 		else:
 			bot.sendNotice(nick, "There is no game in progress.")
 	
@@ -446,7 +472,7 @@ class UnoPlugin(Plugin.Plugin):
 			if self.gameowner == nick or bot.isAdmin(nick):
 				
 				# Reset Game
-				self.resetUno()
+				self.resetUno(bot)
 					
 				# Print a message.
 				bot.sendMessage(target, nick + " stopped the current game.")
@@ -479,7 +505,7 @@ class UnoPlugin(Plugin.Plugin):
 				self.sendPlayerHand(bot, player_index)
 				
 			else:
-				bot.sendNotice(nick, "You are not in this game")
+				bot.sendNotice(nick, "You are not in this game.")
 		else:
 			bot.sendNotice(nick, "There is no current game.")
 	
@@ -495,6 +521,24 @@ class UnoPlugin(Plugin.Plugin):
 			# Send top card
 			bot.sendMessage(target, "Top card: " + self.cardString(self.last_card))
 	
+	# commandTurn() - Announce who's turn it is.
+		# - Confirm a game is in progress.
+		# - Announce the current turn.
+	
+	def commandTurn(self, bot, nick, target, message):
+		
+		# Check if we're in a game
+		if self.state == UNO_STATE_STARTED:
+			
+			player = self.players[self.turn_index]
+			
+			# Send top card
+			bot.sendMessage(target, "It's currently " + player["nick"] + "'s turn!")
+		
+		else:
+			bot.sendNotice(nick, "No game in progress.")
+		
+	
 	
 	# commandHelp() - Send player help message.
 		# - Message the player the help messages.
@@ -505,28 +549,28 @@ class UnoPlugin(Plugin.Plugin):
 		bot.sendNotice(nick, "")
 		bot.sendNotice(nick, "-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!uno")
+		bot.sendNotice(nick, "uno")
 		bot.sendNotice(nick, "- Creates a new game lobby if none already exist.")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!join")
+		bot.sendNotice(nick, "join")
 		bot.sendNotice(nick, "- Join the current game lobby.")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!deal")
+		bot.sendNotice(nick, "deal")
 		bot.sendNotice(nick, "- Once enough players have joined, this starts the game.")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!play <card> [color]")
+		bot.sendNotice(nick, "play <card> [color]")
 		bot.sendNotice(nick, "- Play a card, color is optional for wild cards, and should be only a single letter.")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!draw")
+		bot.sendNotice(nick, "draw / d")
 		bot.sendNotice(nick, "- If you cannot play a card, you can use this command to draw a card.")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!pass")
+		bot.sendNotice(nick, "pass")
 		bot.sendNotice(nick, "- Once you have drawn a card, you may pass your turn.")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!hand")
+		bot.sendNotice(nick, "hand")
 		bot.sendNotice(nick, "- Shows your current hand.")
 		bot.sendNotice(nick, "")
-		bot.sendNotice(nick, "!top")
+		bot.sendNotice(nick, "top")
 		bot.sendNotice(nick, "- Display the top card of the pile.")
 		bot.sendNotice(nick, "")
 		bot.sendNotice(nick, "-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-")
@@ -542,11 +586,8 @@ class UnoPlugin(Plugin.Plugin):
 			if bot.isAdmin(nick):
 					
 					# if the first letter is w
-					if message == "die":                       
+					if message == "die":
 						exit()
-					elif message[0:3] == "slap":
-						bot.sendAction(target, "slaps"+message[5:]+" around with a large trout")
-						
 						
 			else:
 				bot.sendNotice(nick, "You are NOT a bot admin.")
@@ -569,6 +610,9 @@ class UnoPlugin(Plugin.Plugin):
 			
 				# Set the game to started.
 				self.state = UNO_STATE_STARTED
+				
+				# Set the channel moderated
+				bot.sendRaw("MODE " + self.channel + " +m")
 				
 				# Send the hand to each player, except the first?
 				for i in range(1, len(self.players)):
@@ -621,7 +665,17 @@ class UnoPlugin(Plugin.Plugin):
 		bot.sendMessage(self.channel, nick + "'s turn!")
 	
 	# resetUno() - Resets the game variables.
-	def resetUno(self):
+	def resetUno(self, bot):
+		
+		# Set the channel moderated
+		bot.sendRaw("MODE " + self.channel + " -m")
+	
+		self.takePlayerHop(bot, self.gameowner)
+		
+		if self.players:
+			for player in self.players:
+				if(player is not self.gameowner):
+					self.takePlayerVoice(bot, player["nick"])
 		
 		self.state = UNO_STATE_STOPPED
 		self.deck = None
@@ -630,6 +684,7 @@ class UnoPlugin(Plugin.Plugin):
 		self.turn_index = None
 		self.reverse = False
 		self.canpass = False
+		
 		
 # ----------------------------------------------------------------------------------
 # ------- Tool Functions -----------------------------------------------------------
@@ -724,6 +779,23 @@ class UnoPlugin(Plugin.Plugin):
 		
 		# Defualt return false.
 		return False
+	
+	# givePlayerVoice() - Gives the player Voice (For players)
+	def givePlayerVoice(self, bot, nick):
+		bot.sendAddMode(self.channel, nick, "v")
+		
+	# givePlayerHop() - Give a player hop (party owner)
+	def givePlayerHop(self, bot, nick):
+		bot.sendAddMode(self.channel, nick, "h")
+		
+	# takePlayerVoice() - Takes the player Voice (For players)
+	def takePlayerVoice(self, bot, nick):
+		bot.sendRemMode(self.channel, nick, "v")
+		
+	# takePlayerHop() - Take a player hop (party owner)
+	def takePlayerHop(self, bot, nick):
+		bot.sendRemMode(self.channel, nick, "h")
+		
 	
 # ----------------------------------------------------------------------------------
 # ------- Deck Functions -----------------------------------------------------------

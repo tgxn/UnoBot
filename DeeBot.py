@@ -11,7 +11,6 @@
 #	}
 
 import threading
-import Config
 
 import DeeIRC
 import DeeIRC.Utils as Utils
@@ -25,9 +24,15 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 	
 	def __init__(self):
 		"""Constructor"""
+		self.debug = True
+		super(DeeBot, self).__init__("UnoBot")
 		
-		self.debug = Config.debug
-		super(DeeBot, self).__init__(Config.botnick, Config.ident, Config.rname)
+		# Config
+		self.config = {}
+		self.config["server"] = "server.irc-server.com"
+		self.config["channel"] = "#Uno"
+		self.config["admins"] = ["gamerx"]
+		self.config["plugins"] = ["Uno"]
 		
 		# Add events.
 		self.addEvent("connected", Events.ConnectedEvent())
@@ -38,7 +43,7 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 		self.plugins = {}
 		
 		# Load plugins.
-		for plugin in Config.plugins:
+		for plugin in self.config["plugins"]:
 			self.loadPlugin(plugin)
 	
 	# ------ Loop --------------------------------------------------------------
@@ -46,7 +51,7 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 	def run(self):
 		"""Runs continously in it's own thread, calling plugin, think functions and other things. Neccessary for timers, etc."""
 		
-		self.connect(Config.server, Config.port)
+		self.connect(self.config["server"])
 			
 	# ------ Plugin helpers ----------------------------------------------------
 	
@@ -131,7 +136,7 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 	
 	def isAdmin(self, nick):
 		"""Returns if a user is an admin or not"""
-		if nick in Config.admins:
+		if nick in self.config["admins"]:
 			return True
 		else:
 			return False
@@ -158,6 +163,8 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 # ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
+	print "Deebot"
+	print
 	
 	bot = DeeBot()
 	bot.run()
