@@ -32,7 +32,7 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 		self.config = {}
 		self.config["server"] = os.environ['IRC_SERVER']
 		self.config["channel"] = os.environ['IRC_CHANNEL']
-		self.config["admins"] = [os.environ['IRC_ADMINS'].strip() for x in my_string.split(',')]
+		self.config["admins"] = [x.strip() for x in os.environ['IRC_ADMINS'].split(',')]
 		self.config["plugins"] = ["Uno"]
 		
 		# Add events.
