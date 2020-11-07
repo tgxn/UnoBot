@@ -121,7 +121,7 @@ class UnoPlugin(Plugin.Plugin):
 			self.state = UNO_STATE_STARTING
 			
 			# Print some messages.
-			bot.sendMessage(target, "A game of Uno has started. Players can now \"join\".")
+			bot.sendMessage(target, nick + " has started a game of Uno. Players can now \"join\".")
 			bot.sendNotice(nick, "You need to use \"deal\" when you are ready to start your game.")
 			
 			# Set the game's owner.
