@@ -1,6 +1,10 @@
 UnoBot
 ======
 
+Run with Python2!
+`python2 DeeBot.py`
+
+
 Use it like this in docker-compose:
 ```yaml
     unobot:
