@@ -121,7 +121,7 @@ class UnoPlugin(Plugin.Plugin):
 			self.state = UNO_STATE_STARTING
 			
 			# Print some messages.
-			bot.sendMessage(target, "A game of Uno has started. Players can now \"join\".")
+			bot.sendMessage(target, nick + " has started a game of Uno. Players can now \"join\".")
 			bot.sendNotice(nick, "You need to use \"deal\" when you are ready to start your game.")
 			
 			# Set the game's owner.
@@ -622,6 +622,13 @@ class UnoPlugin(Plugin.Plugin):
 				self.moveCards(self.deck, self.pile, 1)
 				self.last_card = self.pile[0]
 				
+				# if the chosen top card is wild, we need a color to go with it!
+				top_deck = self.cardString(self.last_card)
+				if top_deck == "w" or top_deck == "wd4":
+					colors = ["r", "g", "b", "y"]
+					color_choice = random.choice(range(0, 3))
+					self.last_card += (" " + color_choice)
+					
 				# Send a message
 				bot.sendMessage(self.channel, "Game Started, Top Card is " + self.cardString(self.last_card))
 				
