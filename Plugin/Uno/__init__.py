@@ -121,7 +121,7 @@ class UnoPlugin(Plugin.Plugin):
 			self.state = UNO_STATE_STARTING
 			
 			# Print some messages.
-			bot.sendMessage(target, nick + " has started a game of Uno. Players can now \"join\".")
+			bot.sendMessage(target, nick + " has created a game lobby for Uno. Players can now \"join\".")
 			bot.sendNotice(nick, "You need to use \"deal\" when you are ready to start your game.")
 			
 			# Set the game's owner.
@@ -287,7 +287,19 @@ class UnoPlugin(Plugin.Plugin):
 								bot.sendNotice(nick, "You don't have that card!")
 						
 						elif len(message) >= 2:
-							if message[0] == self.last_card[0] or message[1] == self.last_card[1] or self.last_card == "w" or self.last_card == "wd4":
+							
+							
+							## when playing a card on top of a wildcard at the start of the game with no color
+							#   File "/data/bot/Plugin/Uno/__init__.py", line 290, in commandPlay
+							#     if message[0] == self.last_card[0] or message[1] == self.last_card[1] or self.last_card == "w" or self.last_card == "wd4":
+							# IndexError: string index out of range
+							
+							# wild_card = False
+							# if len(self.last_card) == 1:
+							# 	bot.sendMessage(target, " error case? CAUTE!")	
+							# 	wild_card = True
+								
+							if self.last_card == "w" or self.last_card == "wd4" or message[0] == self.last_card[0] or message[1] == self.last_card[1]:
 								
 								# Make sure the player actually has that card.
 								if message in player["hand"]:

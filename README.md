@@ -3,6 +3,8 @@ UnoBot
 
 Run with Python2!
 `python2 DeeBot.py`
+windoze
+`"C:\Python27\python.exe" DeeBot.py --server "irc.connct.online" --channel "#Uno" --admins "tgxn,gamerx" --ns_pw "34g63457h3573h673"`
 
 
 Use it like this in docker-compose:

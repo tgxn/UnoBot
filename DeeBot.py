@@ -11,6 +11,7 @@
 #	}
 
 import os
+import argparse
 import threading
 
 import DeeIRC
@@ -164,8 +165,33 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 # ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-	print "Deebot"
+	print "Starting Deebot"
 	print
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--server')
+	parser.add_argument('--channel')
+	parser.add_argument('--admins')
+	parser.add_argument('--ns_pw')
+	args = parser.parse_args()
+	
+	if args:
+		print args
+		for arg in vars(args):
+			print arg, getattr(args, arg)
+			if arg =="server":
+				print "server", getattr(args, arg)
+				os.environ['IRC_SERVER'] = getattr(args, arg)
+			if arg =="channel":
+				print "channel", getattr(args, arg)
+				os.environ['IRC_CHANNEL'] = getattr(args, arg)
+			if arg =="admins":
+				print "admins", getattr(args, arg)
+				os.environ['IRC_ADMINS'] = getattr(args, arg)
+			if arg =="ns_pw":
+				print "ns_pw", getattr(args, arg)
+				os.environ['IRC_NS_PW'] = getattr(args, arg)
+		
 	
 	bot = DeeBot()
 	bot.run()
