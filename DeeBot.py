@@ -9,9 +9,10 @@
 #			"instance":[instance_object],
 #		}
 #	}
-
 import os
 import threading
+import os
+import sys
 
 import DeeIRC
 import DeeIRC.Utils as Utils
@@ -46,6 +47,16 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 		# Load plugins.
 		for plugin in self.config["plugins"]:
 			self.loadPlugin(plugin)
+		
+		# Check PID Files
+		pid = str(os.getpid())
+		pidfile = "UnoBot.pid"
+		
+		if os.path.isfile(pidfile):
+			os.remove(pidfile)
+			file(pidfile, 'w').write(pid)
+		else:
+			file(pidfile, 'w').write(pid)
 	
 	# ------ Loop --------------------------------------------------------------
 	
@@ -168,4 +179,4 @@ if __name__ == "__main__":
 	print
 	
 	bot = DeeBot()
-	bot.run()
+	bot.run() # ???
