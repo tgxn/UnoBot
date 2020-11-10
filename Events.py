@@ -4,9 +4,6 @@
 
 import DeeIRC.Events as Events
 
-import os
-import time
-
 # Connect Event Class
 # --------------------------------------------------------------------------
 
@@ -15,13 +12,8 @@ class ConnectedEvent(Events.ConnectedEvent):
 	# When this event is fired.
 	def fire(self, bot):
 		
-		ident_pw = os.environ['IRC_NS_PW']
-		
-		if ident_pw:
-			# Auth with nickserv on connect.
-			bot.sendRaw("PRIVMSG NickServ :identify " + ident_pw)
-
-			time.sleep(3)
+		# Auth with nickserv on connect.
+		bot.sendRaw("PRIVMSG NickServ :identify 1234")
 		
 		# Joins the configured channels on connect.
 		bot.sendJoin(bot.config["channel"])
