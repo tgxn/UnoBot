@@ -16,11 +16,9 @@ class ConnectedEvent(Events.ConnectedEvent):
 	def fire(self, bot):
 		
 		ident_pw = os.environ['IRC_NS_PW']
-		
 		if ident_pw:
 			# Auth with nickserv on connect.
 			bot.sendRaw("PRIVMSG NickServ :identify " + ident_pw)
-
 			time.sleep(3)
 		
 		# Joins the configured channels on connect.
