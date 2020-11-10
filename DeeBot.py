@@ -9,7 +9,7 @@
 #			"instance":[instance_object],
 #		}
 #	}
-
+import os
 import threading
 import os
 import sys
@@ -31,9 +31,9 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 		
 		# Config
 		self.config = {}
-		self.config["server"] = "test"
-		self.config["channel"] = "#Uno"
-		self.config["admins"] = ["tgxn"]
+		self.config["server"] = os.environ['IRC_SERVER']
+		self.config["channel"] = os.environ['IRC_CHANNEL']
+		self.config["admins"] = [x.strip() for x in os.environ['IRC_ADMINS'].split(',')]
 		self.config["plugins"] = ["Uno"]
 		
 		# Add events.
@@ -87,7 +87,7 @@ class DeeBot(DeeIRC.IRC.DeeIRC):
 			
 			# Log it.
 			self.log("Loaded plugin(" + plugin_name + ")")
-		except Exception, e:
+		except Exception:
 			self.error("Failed to load plugin(" + plugin_name + "): " + str(e))
 			raise # pass so calling function can manage it.
 		
@@ -179,4 +179,4 @@ if __name__ == "__main__":
 	print
 	
 	bot = DeeBot()
-	bot.run()
+	bot.run() # ???
